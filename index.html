@@ -118,62 +118,13 @@ const schedules=[
 
 let lastRing="";
 
-function updateCountdown(){
-let now=new Date();
-let next=null;
-
-for(let s of schedules){
-let [h,m]=s.time.split(":");
-let target=new Date();
-target.setHours(h,m,0,0);
-if(target>now){ next=s; break; }
-}
-
-if(!next){
-document.getElementById("countdown").innerText="00:00:00";
-document.getElementById("infoText").innerText="Selesai";
-return;
-}
-
-document.getElementById("infoText").innerText=next.label;
-
-let [h,m]=next.time.split(":");
-let target=new Date();
-target.setHours(h,m,0,0);
-
-let diff=Math.floor((target-now)/1000);
-if(diff<=0) diff=0;
-
-if(diff===0 && lastRing!==next.time){
-const bell=document.getElementById("bellSound");
-bell.currentTime=0;
-bell.play().catch(()=>{});
-lastRing=next.time;
-}
-
-let hour=Math.floor(diff/3600);
-let min=Math.floor((diff%3600)/60);
-let sec=diff%60;
-
-document.getElementById("countdown").innerText =
-String(hour).padStart(2,"0")+":"+
-String(min).padStart(2,"0")+":"+
-String(sec).padStart(2,"0");
-}
-
-setInterval(updateCountdown,1000);
-updateCountdown();
-
-const bellButton=document.getElementById("bellButton");
-if(bellButton){
-  bellButton.addEventListener("click",()=>{
+function playBellSequence(times){
     const bell=document.getElementById("bellSound");
-    bell.currentTime=0;
-    bell.play().catch(()=>{});
-    bellButton.style.transform="scale(0.9)";
-    setTimeout(()=>{bellButton.style.transform="scale(1)";},150);
-  });
+
+    for(let i=0;i<times;i++){
+        setTimeout(()=>{
+            bell.currentTime=0;
+            bell.play().catch(()=>{});
+        }, i*1500);
+    }
 }
-</script>
-</body>
-</html>
