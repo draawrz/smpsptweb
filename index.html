@@ -110,21 +110,80 @@ colon.style.opacity = colon.style.opacity==="0" ? "1":"0";
 });
 },1000);
 
-const schedules=[
-{time:"09:30",label:"Istirahat 1"},
-{time:"10:00",label:"Istirahat 2"},
-{time:"12:00",label:"Pulang"}
+const schedules = [
+  { time: "09:30", label: "Istirahat 1" },
+  { time: "10:00", label: "Istirahat 2" },
+  { time: "12:00", label: "Pulang" }
 ];
-    
-let lastRing="";
 
-function playBellSequence(times){
-    const bell=document.getElementById("bellSound");
+let lastRing = "";
 
-    for(let i=0;i<times;i++){
-        setTimeout(()=>{
-            bell.currentTime=0;
-            bell.play().catch(()=>{});
-        }, i*1500);
-    }
+function playBellSequence(times) {
+  const bell = document.getElementById("bellSound");
+
+  for (let i = 0; i < times; i++) {
+    setTimeout(() => {
+      bell.currentTime = 0;
+      bell.play().catch(() => {});
+    }, i * 1500);
+  }
 }
+
+function updateCountdown() {
+
+  const now = new Date();
+  let next = null;
+
+  for (const s of schedules) {
+
+    const [h, m] = s.time.split(":").map(Number);
+
+    const target = new Date();
+    target.setHours(h, m, 0, 0);
+
+    if (target > now) {
+      next = s;
+      break;
+    }
+  }
+
+  if (!next) {
+    document.getElementById("countdown").innerText = "SELESAI";
+    document.getElementById("infoText").innerText = "Tidak ada jadwal lagi";
+    return;
+  }
+
+  document.getElementById("infoText").innerText = next.label;
+
+  const [h, m] = next.time.split(":").map(Number);
+
+  const target = new Date();
+  target.setHours(h, m, 0, 0);
+
+  let diff = Math.floor((target - now) / 1000);
+
+  if (diff < 0) diff = 0;
+
+  if (diff === 0 && lastRing !== next.time) {
+
+    if (next.label === "Istirahat 1") {
+      playBellSequence(3);
+    } else {
+      playBellSequence(4);
+    }
+
+    lastRing = next.time;
+  }
+
+  const hour = Math.floor(diff / 3600);
+  const minute = Math.floor((diff % 3600) / 60);
+  const second = diff % 60;
+
+  document.getElementById("countdown").innerText =
+    String(hour).padStart(2, "0") + ":" +
+    String(minute).padStart(2, "0") + ":" +
+    String(second).padStart(2, "0");
+}
+
+setInterval(updateCountdown, 1000);
+updateCountdown();
