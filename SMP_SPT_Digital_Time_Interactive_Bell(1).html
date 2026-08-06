@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>SMP SPT DIGITAL TIME</title>
+<style>
+body{
+margin:0;height:100vh;display:flex;justify-content:center;align-items:center;
+flex-direction:column;font-family:sans-serif;
+background:url("https://raw.githubusercontent.com/andrha7-ops/test.smpspt.image/982b6bd53ba8a7218de2dc7df6a5ed3517960b48/Screenshot%202026-02-09%2010.32.25.png");
+background-size:cover;background-position:center;
+}
+.container{text-align:center;}
+.display{display:flex;align-items:center;gap:10px;justify-content:center;margin-bottom:30px;}
+.digit{position:relative;width:60px;height:110px;}
+.segment{position:absolute;background:rgba(0,0,0,0.25);transition:0.1s;}
+.on{background:#ff2a2a;box-shadow:0 0 8px #ff0000,0 0 20px #ff0000;}
+.a{top:0;left:10px;width:40px;height:10px}
+.b{top:10px;right:0;width:10px;height:40px}
+.c{bottom:10px;right:0;width:10px;height:40px}
+.d{bottom:0;left:10px;width:40px;height:10px}
+.e{bottom:10px;left:0;width:10px;height:40px}
+.f{top:10px;left:0;width:10px;height:40px}
+.g{top:50px;left:10px;width:40px;height:10px}
+.colon{font-size:60px;color:#ff2a2a;text-shadow:0 0 10px red;}
+.countdown-area{display:flex;align-items:center;justify-content:center;gap:20px;}
+#countdown{font-size:70px;color:#ff2a2a;font-family:monospace;text-shadow:0 0 10px red;}
+.bell-img{width:80px;}
+.info-box{
+margin-top:20px;padding:12px 30px;border-radius:15px;
+background:rgba(0,0,0,0.35);color:white;font-size:18px;
+box-shadow:0 0 15px rgba(255,0,0,0.4);
+}
+.info-highlight{color:#ff2a2a;font-weight:bold;}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="display" id="clock"></div>
+
+<div class="countdown-area">
+<div id="countdown">00:00:00</div>
+<img class="bell-img" id="bellButton" title="Tes Bel"
+src="https://raw.githubusercontent.com/andrha7-ops/smpsptspr.element/eefbc1c6d73cb09a823a14ad18d1326f4a99ceed/school-alarm-230v-bell-big-type-dns-212d-1.webp"
+style="cursor:pointer;transition:transform .2s;">
+</div>
+
+<div class="info-box">
+Bel selanjutnya :
+<span class="info-highlight" id="infoText">-</span>
+</div>
+</div>
+
+<audio id="bellSound" preload="auto">
+<source src="https://raw.githubusercontent.com/draawrz/smpsptweb/bff20ab3001d0299a31e814196ee9f2891e2fdbb/school-bell-for-project.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+const digitMap={
+0:["a","b","c","d","e","f"],1:["b","c"],2:["a","b","g","e","d"],
+3:["a","b","g","c","d"],4:["f","g","b","c"],5:["a","f","g","c","d"],
+6:["a","f","e","d","c","g"],7:["a","b","c"],
+8:["a","b","c","d","e","f","g"],9:["a","b","c","d","f","g"]
+};
+
+function createDigit(){
+let d=document.createElement("div");
+d.className="digit";
+["a","b","c","d","e","f","g"].forEach(s=>{
+let div=document.createElement("div");
+div.className="segment "+s;
+d.appendChild(div);
+});
+return d;
+}
+
+const clock=document.getElementById("clock");
+
+for(let i=0;i<8;i++){
+if(i==2||i==5){
+let c=document.createElement("div");
+c.className="colon";
+c.innerText=":";
+clock.appendChild(c);
+}else{
+clock.appendChild(createDigit());
+}
+}
+
+function setDigit(el,num){
+el.querySelectorAll(".segment").forEach(s=>s.classList.remove("on"));
+digitMap[num].forEach(seg=>el.querySelector("."+seg).classList.add("on"));
+}
+
+function updateClock(){
+let now=new Date();
+let time=String(now.getHours()).padStart(2,"0")+
+String(now.getMinutes()).padStart(2,"0")+
+String(now.getSeconds()).padStart(2,"0");
+
+document.querySelectorAll(".digit").forEach((d,i)=>setDigit(d,time[i]));
+}
+
+setInterval(updateClock,1000);
+updateClock();
+
+setInterval(()=>{
+document.querySelectorAll(".colon").forEach(colon=>{
+colon.style.opacity = colon.style.opacity==="0" ? "1":"0";
+});
+},1000);
+
+const schedules=[
+{time:"09:10",label:"Istirahat 1"},
+{time:"10:40",label:"Istirahat 2"},
+{time:"12:00",label:"Pulang"}
+];
+
+let lastRing="";
+
+function updateCountdown(){
+let now=new Date();
+let next=null;
+
+for(let s of schedules){
+let [h,m]=s.time.split(":");
+let target=new Date();
+target.setHours(h,m,0,0);
+if(target>now){ next=s; break; }
+}
+
+if(!next){
+document.getElementById("countdown").innerText="00:00:00";
+document.getElementById("infoText").innerText="Selesai";
+return;
+}
+
+document.getElementById("infoText").innerText=next.label;
+
+let [h,m]=next.time.split(":");
+let target=new Date();
+target.setHours(h,m,0,0);
+
+let diff=Math.floor((target-now)/1000);
+if(diff<=0) diff=0;
+
+if(diff===0 && lastRing!==next.time){
+const bell=document.getElementById("bellSound");
+bell.currentTime=0;
+bell.play().catch(()=>{});
+lastRing=next.time;
+}
+
+let hour=Math.floor(diff/3600);
+let min=Math.floor((diff%3600)/60);
+let sec=diff%60;
+
+document.getElementById("countdown").innerText =
+String(hour).padStart(2,"0")+":"+
+String(min).padStart(2,"0")+":"+
+String(sec).padStart(2,"0");
+}
+
+setInterval(updateCountdown,1000);
+updateCountdown();
+
+const bellButton=document.getElementById("bellButton");
+if(bellButton){
+  bellButton.addEventListener("click",()=>{
+    const bell=document.getElementById("bellSound");
+    bell.currentTime=0;
+    bell.play().catch(()=>{});
+    bellButton.style.transform="scale(0.9)";
+    setTimeout(()=>{bellButton.style.transform="scale(1)";},150);
+  });
+}
+</script>
+</body>
+</html>
